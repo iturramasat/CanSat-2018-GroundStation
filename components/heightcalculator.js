@@ -1,0 +1,3 @@
+class GS extends EventEmitter {
+  
+}
