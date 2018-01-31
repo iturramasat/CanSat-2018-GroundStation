@@ -12,18 +12,23 @@ var parsers = SerialPort.parsers;
 var recvConfig = config.iturramasat_receiver;
 var hCalculator = require(__dirname + "/altitude_calculator.js");
 
-class Receiver extends EventEmitter {
+class Receiver {
   constructor(){
     super();
-    var self = this;
+    var self = Receiver;
     self.connected = false;
     self.tty = recvConfig.tty;
     self.currentValues = {};
     self.simulateFirstGPS();
   }
 
+  static emit(evt, value){
+    var that = GS;
+    emitter.emit(evt, value);
+  }
+
   connect(){
-    var self = this;
+    var self = Receiver;
     if(self.connected){
       log("receiver", "Already connected to the GroundStation");
       return false;
@@ -131,7 +136,7 @@ class Receiver extends EventEmitter {
   }
 
   simulateFirstGPS(){
-    var self = this;
+    var self = Receiver;
     var now = Date.now();
     log("receiver", "simulating first GPS coords..");
     self.emit("receivedValue", {
