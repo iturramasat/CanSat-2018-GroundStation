@@ -4,7 +4,7 @@ const config = require(__dirname + '/config.json');
 const emitter = require('central-event');
 
 emitter.on("receivedValue", function (value) {
-  firebase.update("/sats/a_sat/" + value.name, {value: value.value})
+  firebase.update("/sats/" + config.sat_code + "/" + value.name, {value: value.value})
   .fail(function (error) {
     console.log(error);
   });
