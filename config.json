@@ -1,4 +1,23 @@
 {
   "sat_code":"a_sat",
   "firebaseUrl": "https://iturramasat-cfb32.firebaseio.com/",
+  "altitude_calculator": {
+    "t0": 20.5,
+    "h0": 0,
+    "p0": 969.0
+  },
+  "iturramasat_receiver":{
+    "send_multiply":{
+      "temp":100,
+      "pre":100,
+      "gpslat":1000000,
+      "gpslong":1000000
+    },
+    "baudrate": 9600,
+    "tty": "/dev/ttyUSB0",
+    "firstPos": {
+      "lat": 42.812126,
+      "lng": -1.649272
+    }
+  }
 }

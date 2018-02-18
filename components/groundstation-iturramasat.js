@@ -4,120 +4,125 @@
 
 */
 
-var EventEmitter = require('events').EventEmitter;
+const emitter = require('central-event');
 var log = require(__dirname + "/consolelog.js").log;
-var config = require(__dirname + '/config.json');
+var config = require(__dirname + '/../config.json');
 var SerialPort = require('serialport');
 var parsers = SerialPort.parsers;
 var recvConfig = config.iturramasat_receiver;
 var hCalculator = require(__dirname + "/altitude_calculator.js");
 
 class Receiver {
-  constructor(){
-    super();
-    var self = Receiver;
-    self.connected = false;
-    self.tty = recvConfig.tty;
-    self.currentValues = {};
-    self.simulateFirstGPS();
+  static init(){
+    var that = Receiver;
+    that.connected = false;
+    that.tty = recvConfig.tty;
+    that.currentValues = {};
+    that.simulateFirstGPS();
+    that.connect();
   }
 
   static emit(evt, value){
-    var that = GS;
+    var that = Receiver;
     emitter.emit(evt, value);
   }
 
-  connect(){
-    var self = Receiver;
-    if(self.connected){
+  static connect(){
+    var that = Receiver;
+    if(that.connected){
       log("receiver", "Already connected to the GroundStation");
       return false;
     }
 
-    self.port = new SerialPort(self.tty, {
+    that.port = new SerialPort(that.tty, {
       baudRate:recvConfig.baudrate,
       parser:SerialPort.parsers.readline(';')
     });
-    self.port.on("error", function (error) {
+    that.port.on("error", function (error) {
       log("serial", error);
     })
-    self.port.on("open", function(){
+    that.port.on("open", function(){
       log("receiver", "Successfully connected to the receiver");
-      self.connected = true;
-      self.emit("receiverConnectionChange", {
+      that.connected = true;
+      that.emit("receiverConnectionChange", {
         "connected": true,
-        "tty": self.tty
+        "tty": that.tty
       });
-      self.port.write("Ping!");
-      self.port.on("data", function(data){
+      that.port.write("Ping!");
+      that.port.on("data", function(data){
         log("receiver", data);
 
         var parsedData = data.split(":");
         var now = new Date().getTime();
 
-        if(parsedData.length === 4){
-          if(typeof self.firstMeasurement == "undefined"){
-            self.firstMeasurement = true;
-          } else  if(self.firstMeasurement){
-            self.firstMeasurement = false;
+        if(parsedData.length === 5){
+          if(typeof that.firstMeasurement == "undefined"){
+            that.firstMeasurement = true;
+          } else  if(that.firstMeasurement){
+            that.firstMeasurement = false;
           }
 
-          self.currentValues.temp = parsedData[0] / recvConfig.send_multiply.temp;
-          self.currentValues.pre = parsedData[1] / recvConfig.send_multiply.pre;
-          self.currentValues.gpslat = parsedData[2] / recvConfig.send_multiply.gpslat;
-          self.currentValues.gpslong = parsedData[3] / recvConfig.send_multiply.gpslong;
+          that.currentValues.temp = parsedData[0] / recvConfig.send_multiply.temp;
+          that.currentValues.pre = parsedData[1] / recvConfig.send_multiply.pre;
+          that.currentValues.gpslat = parsedData[2] / recvConfig.send_multiply.gpslat;
+          that.currentValues.gpslong = parsedData[3] / recvConfig.send_multiply.gpslong;
+          that.currentValues.id = parsedData[4];
+          if(!that.firstMeasurement){
+            that.previusTime = that.currentTime;
+            that.currentTime = now;
+            that.intervalTime = that.currentTime - that.previusTime;
+            that.previusAltitude = that.currentValues.altitude;
 
-          if(!self.firstMeasurement){
-            self.previusTime = self.currentTime;
-            self.currentTime = now;
-            self.intervalTime = self.currentTime - self.previusTime;
-            self.previusAltitude = self.currentValues.altitude;
-
-            self.currentValues.altitude = hCalculator(self.currentValues.pre);
-            self.movedDistance = self.currentValues.altitude - self.previusAltitude;
-            self.movedVelocity = self.movedDistance / self.intervalTime * 1000;
+            that.currentValues.altitude = hCalculator(that.currentValues.pre);
+            that.movedDistance = that.currentValues.altitude - that.previusAltitude;
+            that.movedVelocity = that.movedDistance / that.intervalTime * 1000;
           } else {
-            self.currentTime = now;
-            self.currentValues.altitude = hCalculator(self.currentValues.pre);
+            that.currentTime = now;
+            that.currentValues.altitude = hCalculator(that.currentValues.pre);
           }
 
-          self.emit("receivedValue", {
+          that.emit("receivedValue", {
             "name": "temp",
             "time": now,
-            "value": self.currentValues.temp
+            "value": that.currentValues.temp
           });
-          self.emit("receivedValue", {
+          that.emit("receivedValue", {
             "name": "pre",
             "time": now,
-            "value": self.currentValues.pre
+            "value": that.currentValues.pre
           });
-          self.emit("receivedValue", {
+          that.emit("receivedValue", {
             "name": "gpslat",
             "time": now,
-            "value": self.currentValues.gpslat
+            "value": that.currentValues.gpslat
           });
-          self.emit("receivedValue", {
+          that.emit("receivedValue", {
             "name": "gpslong",
             "time": now,
-            "value": self.currentValues.gpslong
+            "value": that.currentValues.gpslong
           });
-          self.emit("receivedValue", {
+          that.emit("receivedValue", {
+            "name": "id",
+            "time": now,
+            "value": that.currentValues.id;
+          });
+          that.emit("receivedValue", {
             "name": "alt",
             "time": now,
-            "value": self.currentValues.altitude
+            "value": that.currentValues.altitude
           });
 
-          if(!self.firstMeasurement){
-            self.emit("receivedValue", {
+          if(!that.firstMeasurement){
+            that.emit("receivedValue", {
               "name": "vvel",
               "time": now,
-              "value": self.movedVelocity
+              "value": that.movedVelocity
             });
           }
         } else if (parsedData.length === 2){
           log("cansat", parsedData[1]);
           var now = Date.now();
-          self.emit("receivedValue", {
+          that.emit("receivedValue", {
             "name": "cansatMsg",
             "time": now,
             "value": parsedData[1]
@@ -125,7 +130,7 @@ class Receiver {
         } else {
           log("protocol", "no-valid values received: " + data);
           var now = Date.now();
-          self.emit("receivedValue", {
+          that.emit("receivedValue", {
             "name": "cansatUnknown",
             "time": now,
             "value": data
@@ -135,21 +140,24 @@ class Receiver {
     });
   }
 
-  simulateFirstGPS(){
-    var self = Receiver;
+  static simulateFirstGPS(){
+    var that = Receiver;
     var now = Date.now();
     log("receiver", "simulating first GPS coords..");
-    self.emit("receivedValue", {
+    that.emit("receivedValue", {
       "name": "gpslat",
       "time": now,
       "value": recvConfig.firstPos.lat
     });
-    self.emit("receivedValue", {
+    that.emit("receivedValue", {
       "name": "gpslong",
       "time": now,
       "value": recvConfig.firstPos.lng
     });
   }
 }
+
+
+Receiver.init();
 
 module.exports = Receiver;

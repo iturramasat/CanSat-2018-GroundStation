@@ -1,5 +1,5 @@
 const firebase = require("./components/firebase.js");
-const gs = require("./components/groundstation.js");
+const gs = require("./components/groundstation-iturramasat.js");
 const config = require(__dirname + '/config.json');
 const emitter = require('central-event');
 
