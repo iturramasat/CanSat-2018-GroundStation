@@ -4,6 +4,18 @@
 
 */
 
+/*
+
+BMP PRESIOA
+BMP temp
+LM35
+MPX
+lat
+gpslong
+gps_time
+gps_speed
+gps_*/
+
 const emitter = require('central-event');
 var log = require(__dirname + "/consolelog.js").log;
 var config = require(__dirname + '/../config.json');
@@ -61,13 +73,19 @@ class Receiver {
           } else  if(that.firstMeasurement){
             that.firstMeasurement = false;
           }
-
-          that.currentValues.temp = parsedData[0] / recvConfig.send_multiply.temp;
-          that.currentValues.pre = parsedData[1] / recvConfig.send_multiply.pre;
-          that.currentValues.gpslat = parsedData[2] / recvConfig.send_multiply.gpslat;
-          that.currentValues.gpslong = parsedData[3] / recvConfig.send_multiply.gpslong;
-          that.currentValues.id = parsedData[4];
-          if(!that.firstMeasurement){
+          that.currentValues.id = parseData[0];
+          that.currentValues.bmppre = parsedData[1];
+          that.currentValues.mpxpre = parsedData[2]
+          that.currentValues.bmptemp = parsedData[3];
+          that.currentValues.lm35 = parsedData[4];
+          that.currentValues.gpslat = parsedData[5];
+          that.currentValues.gpslong = parsedData[6];
+          that.currentValues.gpstime = parsedData[7];
+          packetloss.registerID(that.currentValues.id);
+          that.currentValues.packetloss = packetloss.getPacketloss();
+          that.currentValues.bmpheight = hCalculator(that.currentValues.bmppre);
+          that.currentValues.mpxheight = hCalculator(that.currentValues.mpxpre);
+          /*if(!that.firstMeasurement){
             that.previusTime = that.currentTime;
             that.currentTime = now;
             that.intervalTime = that.currentTime - that.previusTime;
@@ -79,7 +97,7 @@ class Receiver {
           } else {
             that.currentTime = now;
             that.currentValues.altitude = hCalculator(that.currentValues.pre);
-          }
+          }*/
 
           that.emit("receivedValue", {
             "name": "temp",
@@ -104,7 +122,7 @@ class Receiver {
           that.emit("receivedValue", {
             "name": "id",
             "time": now,
-            "value": that.currentValues.id;
+            "value": that.currentValues.id
           });
           that.emit("receivedValue", {
             "name": "alt",
