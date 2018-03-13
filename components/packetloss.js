@@ -1,15 +1,15 @@
 let ids = [];
-
+const maxIDS = 20;
 class Packetloss {
   static registerID(id){
     let that = Packetloss;
-    ids.push(registerID);
-    that.cleanOldIds();
+    ids.push(id);
+    that.cleanOldIDs();
   }
 
   static cleanOldIDs(){
     let that = Packetloss;
-    ids = ids.slice(0 - maxIDS, ids.lenght);
+    ids = ids.slice(-maxIDS - 1, ids.lenght);
   }
 
   /*
@@ -29,12 +29,15 @@ class Packetloss {
     let min = Math.min.apply(null, ids);
     let max = Math.max.apply(null, ids);
     let difference = max - min;
+    console.log(difference);
     let received = 20 / difference;
-    return received;
+    return Math.max(0, received);
   }
 
   static calculatePacketLoss(){
     let that = Packetloss;
-    return 1 - that.calculateReceived();
+    return Math.max(0, 1 - that.calculateReceived());
   }
 }
+
+module.exports = Packetloss;

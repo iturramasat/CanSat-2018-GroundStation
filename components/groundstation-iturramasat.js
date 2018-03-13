@@ -17,6 +17,7 @@ gps_speed
 gps_*/
 
 const emitter = require('central-event');
+const packetloss = require("./packetloss.js");
 var log = require(__dirname + "/consolelog.js").log;
 var config = require(__dirname + '/../config.json');
 var SerialPort = require('serialport');
@@ -67,76 +68,32 @@ class Receiver {
         var parsedData = data.split(":");
         var now = new Date().getTime();
 
-        if(parsedData.length === 5){
-          if(typeof that.firstMeasurement == "undefined"){
-            that.firstMeasurement = true;
-          } else  if(that.firstMeasurement){
-            that.firstMeasurement = false;
-          }
-          that.currentValues.id = parseData[0];
-          that.currentValues.bmppre = parsedData[1];
-          that.currentValues.mpxpre = parsedData[2]
-          that.currentValues.bmptemp = parsedData[3];
-          that.currentValues.lm35 = parsedData[4];
-          that.currentValues.gpslat = parsedData[5];
-          that.currentValues.gpslong = parsedData[6];
-          that.currentValues.gpstime = parsedData[7];
-          packetloss.registerID(that.currentValues.id);
-          that.currentValues.packetloss = packetloss.getPacketloss();
-          that.currentValues.bmpheight = hCalculator(that.currentValues.bmppre);
-          that.currentValues.mpxheight = hCalculator(that.currentValues.mpxpre);
-          /*if(!that.firstMeasurement){
-            that.previusTime = that.currentTime;
-            that.currentTime = now;
-            that.intervalTime = that.currentTime - that.previusTime;
-            that.previusAltitude = that.currentValues.altitude;
+        if(parsedData.length === 5){ // Default telemetry
+          let pd = parsedData;
 
-            that.currentValues.altitude = hCalculator(that.currentValues.pre);
-            that.movedDistance = that.currentValues.altitude - that.previusAltitude;
-            that.movedVelocity = that.movedDistance / that.intervalTime * 1000;
-          } else {
-            that.currentTime = now;
-            that.currentValues.altitude = hCalculator(that.currentValues.pre);
-          }*/
+          packetloss.registerID(pd[0]);
+          let send = [
+            {
+              "name":"bmp",
+              "value":parseFloat(pd[1])
+            },
+            {
+              "name":"lm35",
+              "value":parseFloat(pd[2])
+            },
+            {
+              "name":"packetloss",
+              "value": Math.round(packetloss.calculatePacketLoss()*100)/100
+            }
+          ]
 
-          that.emit("receivedValue", {
-            "name": "temp",
-            "time": now,
-            "value": that.currentValues.temp
-          });
-          that.emit("receivedValue", {
-            "name": "pre",
-            "time": now,
-            "value": that.currentValues.pre
-          });
-          that.emit("receivedValue", {
-            "name": "gpslat",
-            "time": now,
-            "value": that.currentValues.gpslat
-          });
-          that.emit("receivedValue", {
-            "name": "gpslong",
-            "time": now,
-            "value": that.currentValues.gpslong
-          });
-          that.emit("receivedValue", {
-            "name": "id",
-            "time": now,
-            "value": that.currentValues.id
-          });
-          that.emit("receivedValue", {
-            "name": "alt",
-            "time": now,
-            "value": that.currentValues.altitude
-          });
-
-          if(!that.firstMeasurement){
+          send.forEach(function (parameter) {
             that.emit("receivedValue", {
-              "name": "vvel",
+              "name": parameter.name,
               "time": now,
-              "value": that.movedVelocity
+              "value": parameter.value
             });
-          }
+          });
         } else if (parsedData.length === 2){
           log("cansat", parsedData[1]);
           var now = Date.now();
