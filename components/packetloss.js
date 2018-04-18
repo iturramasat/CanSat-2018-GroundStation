@@ -29,7 +29,7 @@ class Packetloss {
     let min = Math.min.apply(null, ids);
     let max = Math.max.apply(null, ids);
     let difference = max - min;
-    console.log(difference);
+    //console.log(difference);
     let received = 20 / difference;
     return Math.max(0, received);
   }
