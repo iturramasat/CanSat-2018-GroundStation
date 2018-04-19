@@ -4,7 +4,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 const log = console.log; // for debugging
 // const log = function () {}; // for prod
-
+let parameters = {};
 app.get('/', function(req, res){
   res.json({
     "message":"iturramasat mirror started"
@@ -25,11 +25,18 @@ io.on('connection', function(socket){
     params.forEach(function (parameter) {
       socket.broadcast.emit(parameter.name, parameter.value);
       log(parameter.name + ": " + parameter.value);
+      parameters[parameter.name] = parameter.value;
     });
   });
 
-  socket.on("m", function (params) {
+  socket.on("resend", function () {
+    Object.keys(parameters).forEach(function (parameter) {
+      socket.emit(parameter, parameters[parameter]);
+    });
+  });
+
+  /*socket.on("m", function (params) {
       socket.broadcast.emit("midi", params);
       log(params);
-  })
+  });*/
 });

@@ -197,7 +197,7 @@ class Receiver {
             "value": parseFloat(pd[2])
           }];
 
-          
+
         } else {
           send = [{
             "name": "cansatUnknown",
