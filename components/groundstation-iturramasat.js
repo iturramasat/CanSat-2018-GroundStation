@@ -46,27 +46,40 @@ class Receiver {
   static sendCansatConfig(values){
     let that = Receiver;
     let output = [];
-    let values = that.cansatConfig;
+    that.cansatConfig = values;
+    /*if(that.cansatConfig.parachute_open == true){
+      _write("A");
+
+    } else {
+      _write("B");
+    }*/
     /** **/
-    output[0] = (send_counter * 2 + 0) / 100;
-    output[1] = values.groundstation_presure * 100;
-    output[2] = values.groundstation_temp * 100;
-    output[3] = values.parachute_program;
-    output[4] = values.parachute_height;
-    output[5] = values.parachute_servoStatus;
-    output[6] = values.calibrate_accelerometer;
-    output[7] = values.tx_rate;
-    that._send(output);
+    //output[0] = (send_counter * 2 + 0) / 100;
+    //output[1] = values.groundstation_presure * 100;
+    //output[2] = values.groundstation_temp * 100;
+    /*
+    let txrt;
+    if(values.tx_rate == true){
+      txrt = 1.0;
+    } else {
+      txrt = -1.0
+    }
+    */
+    //output[0] = values.parachute_program.value;
+    //output[1] = values.parachute_height.value;
+    //output[2] = values.command.value;
+    //output[3] = txrt;
+    //output[5] = values.parachute_servoStatus;
+    //output[6] = values.calibrate_accelerometer;
+    //that._send(output);
     //* *//
-
-
-    send_counter = send_counter + 1;
   }
 
   static _write(str){
     let that = Receiver;
+    log("receiver-send", str)
     if(that.connected){
-      that.port.write("str", function (err) {
+      that.port.write(str, function (err) {
         log("receiver", err)
       });
     } else {
@@ -75,7 +88,7 @@ class Receiver {
   }
 
   static _send(array){
-    let that = this;
+    let that = Receiver;
     let send = array.join(":") + ";";
     return that._write(send);
   }
@@ -117,95 +130,69 @@ class Receiver {
         var parsedData = data.split(":");
         var now = new Date().getTime();
 
-        if(parsedData.length === 9){ // Default telemetry
+        if(parsedData.length === 12){ // Default telemetry
           let pd = parsedData;
 
-          packetloss.registerID(parseInt(parseFloat(pd[1]) * 100));
+          packetloss.registerID(parseInt(parseFloat(pd[1])));
 
           const packetTypes = 3;
           let send;
-          packetType = Math.round(parseFloat(pd[0]) * 100) % packetTypes;
+          //let packetType = Math.round(parseFloat(pd[1]) * 100) % packetTypes;
+
+          let packetType = 0;
           if(packetType === 0){
 
             send = [
               {
-                "name":"millis",
-                "value":parseFloat(pd[2]) * 100
-              },
-              {
                 "name":"pbmp",
-                "value":parseFloat(pd[3]) / 100
+                "value":parseFloat(pd[1])
               },
               {
                 "name": "tbmp",
-                "value": parseFloat(pd[4]) / 100
+                "value": parseFloat(pd[2])
               },
               {
                 "name": "hbmp",
-                "value": parseFloat(pd[5]) / 100
+                "value": parseFloat(pd[3])
               },
               {
-                "name": "pmpx",
-                "value": parseFloat(pd[6]) / 100
+                "name": "hforbmp",
+                "value": parseFloat(pd[4])
               },
               {
-                "name": "tds",
-                "value": parseFloat(pd[7]) / 100
+                "name": "tlm35",
+                "value": parseFloat(pd[6])
               },
               {
-                "name": "hmpx",
-                "value": parseFloat(pd[8]) / 100
+                "name":"pmpx",
+                "value": parseFloat(pd[7])
               },
               {
-                "name":"packetloss",
-                "value": Math.round(packetloss.calculatePacketLoss()*100)/100
+                "name":"hmpx",
+                "value": parseFloat(pd[8])
+              },
+              {
+                "name":"gpslat",
+                "value": parseFloat(pd[9])
+              },
+              {
+                "name":"gpslng",
+                "value": parseFloat(pd[10])
+              },
+              {
+                "name":"hgps",
+                "value": parseFloat(pd[11])
               }
             ];
-          } else if (packetType === 1){
-            send = [{
-              "name": "gpslat",
-              "value": parseFloat(pd[2]) / 10000
-            },
-            {
-              "name": "gpslng",
-              "value": parseFloat(pd[3]) / 10000
-            },
-            {
-              "name": "hgps",
-              "value": parseFloat(pd[4]) / 10000
-            },
-            {
-              "name": "vgps",
-              "value": parseFloat(pd[5]) / 100
-            },
-            {
-              "name": "gpssats",
-              "value": parseInt(pd[6])
-            },
-            {
-              "name": "gpshdop",
-              "value": parseInt(pd[7])
-            },
-            {
-              "name": "course",
-              "value": parseFloat(pd[8])
+
+            let hrdr = parseFloat(pd[5]);
+            if(hrdr != 0.0){
+              send.push({
+                "name":"hrdr",
+                "value":hrdr
+              });
             }
-          ];
-        } else if (packetType === 2){
-          send = [{
-            "name": "cfg_rate",
-            "value": parseFloat(pd[2])
-          }];
-
-
-        } else {
-          send = [{
-            "name": "cansatUnknown",
-            "value": data
-          }];
-          log("protocol", "no-valid packet type received: " + packetType);
-        }
-
+          }
           send.forEach(function (parameter) {
             that.callback(parameter.name, now, parameter.value);
           });
@@ -232,7 +219,7 @@ class Receiver {
       "value": recvConfig.firstPos.lat
     });
     that.emit("receivedValue", {
-      "name": "gpslong",
+      "name": "gpslng",
       "time": now,
       "value": recvConfig.firstPos.lng
     });

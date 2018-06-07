@@ -20,7 +20,8 @@ gs.on(function (name, time, value) {
 
 });
 
-var socket = require('socket.io-client')('http://127.0.0.1:3000');
+var socket = require('socket.io-client')(config.socketServer);
+console.log("connecting to " + config.socketServer);
 socket.on('connect', function(){});
 socket.on('event', function(data){});
 socket.on('disconnect', function(){});
@@ -40,8 +41,18 @@ setInterval(function () {
 }, 1000 / config.socketRefreshRate);
 
 let firebaseCanSatConfig = firebase.database().ref("/sats/" + config.sat_code + "/config");
-
+let cansatConfiguration = {};
 firebaseCanSatConfig.on('value', function(snapshot) {
   let val = snapshot.val();
-  gs.updateCansatConfig(val);
+  cansatConfiguration = val;
+  gs.sendCansatConfig(val);
 });
+
+setInterval(function () {
+  gs.sendCansatConfig(cansatConfiguration);
+  Object.keys(values).forEach(function (name) {
+    firebase.database().ref("/sats/" + config.sat_code + "/" + name).set({
+      value: values[name].value
+    });
+  });
+}, 1000);

@@ -9,25 +9,27 @@ class GS {
     emitter.emit(evt, value);
   }
 
+  static on(callback){
+    let that = GS;
+    that.callback = callback;
+  }
+
+  static sendCansatConfig(a){
+
+  }
 }
 
 setInterval(function () {
-  GS._emit("receivedValue", {
-    "name":"temp",
-    "value": Math.round(Math.random()*100)
+
+  send = [{
+      "name":"pbmp",
+      "value":50
+    }];
+
+  send.forEach(function (parameter) {
+    GS.callback(parameter.name, Date.now(), parameter.value);
   });
-  GS._emit("receivedValue", {
-    "name":"presure",
-    "value": Math.round(Math.random()*1000)
-  });
-  GS._emit("receivedValue", {
-    "name":"heigth",
-    "value": Math.round(Math.random()*2000)/10
-  });
-  GS._emit("receivedValue", {
-    "name":"v_vel",
-    "value": Math.round(Math.random()*200)/10
-  });
+  console.log("emitted");
 }, 1000);
 
 module.exports = GS;

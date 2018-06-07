@@ -1,7 +1,7 @@
 {
   "sat_code":"a_sat",
   "firebaseUrl": "https://iturramasat-cfb32.firebaseio.com/",
-  "socketServer": "localhost:3000",
+  "socketServer": "https://stream.iturramasat.com:3000",
   "socketRefreshRate": 20,
   "altitude_calculator": {
     "t0": 20.5,
@@ -15,8 +15,8 @@
       "gpslat":1000000,
       "gpslong":1000000
     },
-    "baudrate": 2000000,
-    "tty": "/dev/ttyACM0",
+    "baudrate": 9600,
+    "tty": "/dev/ttyUSB0",
     "firstPos": {
       "lat": 42.812126,
       "lng": -1.649272
@@ -29,7 +29,7 @@
       "gpslat":1000000,
       "gpslong":1000000
     },
-    "baudrate": 2000000,
-    "tty": "/dev/ttyACM0",
+    "baudrate": 9600,
+    "tty": "/dev/ttyUSB0"
   }
 }
